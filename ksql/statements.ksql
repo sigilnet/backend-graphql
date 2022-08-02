@@ -1,0 +1,70 @@
+SET 'auto.offset.reset' = 'earliest';
+
+-- create events
+CREATE STREAM event_user_add (
+    standard STRING,
+    version STRING,
+    event STRING,
+    data STRUCT <id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT>,
+    emit_info STRUCT <receipt_id STRING, block_timestamp BIGINT, block_height BIGINT, shard_id BIGINT, contract_account_id STRING>
+)
+WITH (
+    kafka_topic = 'near-events.sigilnet.user_add',
+    value_format = 'json',
+    partitions = 1
+);
+
+CREATE STREAM event_user_update (
+    standard STRING,
+    version STRING,
+    event STRING,
+    data STRUCT <id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT>,
+    emit_info STRUCT <receipt_id STRING, block_timestamp BIGINT, block_height BIGINT, shard_id BIGINT, contract_account_id STRING>
+)
+WITH (
+    kafka_topic = 'near-events.sigilnet.user_update',
+    value_format = 'json',
+    partitions = 1
+);
+
+-- create users
+CREATE STREAM user_add
+  WITH (kafka_topic='sigilnet.user_add', partitions=1, value_format='json')
+  AS SELECT
+    data->id as id,
+    data->name as name,
+    data->avatar as avatar,
+    data->created_at as created_at,
+    data->updated_at as updated_at
+  FROM
+    event_user_add;
+
+CREATE STREAM user_update
+  WITH (kafka_topic='sigilnet.user_update', partitions=1, value_format='json')
+  AS SELECT
+    data->id as id,
+    data->name as name,
+    data->avatar as avatar,
+    data->created_at as created_at,
+    data->updated_at as updated_at
+  FROM
+    event_user_update;
+
+CREATE STREAM users (id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT)
+  WITH (kafka_topic='sigilnet.users', partitions=1, value_format='json');
+
+INSERT INTO users SELECT * FROM user_add;
+INSERT INTO users SELECT * FROM user_update;
+
+
+-- testing
+SHOW TOPICS;
+SHOW STREAMS;
+SHOW QUERIES;
+
+DESCRIBE users EXTENDED;
+
+SELECT * FROM users EMIT CHANGES;
+
+TERMINATE <QUERYID>;
+DROP STREAM <STREAM>;
