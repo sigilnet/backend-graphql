@@ -6,6 +6,7 @@ import {schemaComposer} from '../schemaComposer';
 mongooseLong(mongoose);
 
 const userSchema = new Schema({
+  _id: String,
   id: {type: String, uniq: true},
   name: String,
   avatar: String,

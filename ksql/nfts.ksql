@@ -86,6 +86,7 @@ CREATE STREAM "event_nft_transfer_flat"
 CREATE STREAM "nft_mint"
   WITH (kafka_topic='sigilnet.nft_mint', partitions=1, value_format='avro')
   AS SELECT
+    EXPLODE("data"->"token_ids") AS "_id",
     "data"->"owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
     EXPLODE("data"->"metadata") AS "metadata"
@@ -95,13 +96,14 @@ CREATE STREAM "nft_mint"
 CREATE STREAM "nft_transfer"
   WITH (kafka_topic='sigilnet.nft_transfer', partitions=1, value_format='avro')
   AS SELECT
+    EXPLODE("data"->"token_ids") AS "_id",
     "data"->"new_owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
     EXPLODE("data"->"metadata") AS "metadata"
   FROM
     "event_nft_transfer_flat";
 
-CREATE STREAM "nfts" ("owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA)
+CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA)
   WITH (kafka_topic='sigilnet.nfts', partitions=1, value_format='avro');
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint";
@@ -119,7 +121,5 @@ CREATE SINK CONNECTOR "nfts" WITH (
     'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
     'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
     'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
-    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.PartialValueStrategy',
-    'document.id.strategy.partial.value.projection.type' = 'AllowList',
-    'document.id.strategy.partial.value.projection.list' = 'token_id'
+    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy'
 );

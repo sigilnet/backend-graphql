@@ -38,6 +38,7 @@ WITH (
 CREATE STREAM "collection_add"
   WITH (kafka_topic='sigilnet.collection_add', partitions=1, value_format='avro')
   AS SELECT
+    "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"cover" AS "cover",
@@ -48,6 +49,7 @@ CREATE STREAM "collection_add"
 CREATE STREAM "collection_update"
   WITH (kafka_topic='sigilnet.collection_update', partitions=1, value_format='avro')
   AS SELECT
+    "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"cover" AS "cover",
@@ -55,7 +57,7 @@ CREATE STREAM "collection_update"
   FROM
     "event_collection_update";
 
-CREATE STREAM "collections" ("id" STRING, "name" STRING, "cover" STRING, "owner_id" STRING)
+CREATE STREAM "collections" ("_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "owner_id" STRING)
   WITH (kafka_topic='sigilnet.collections', partitions=1, value_format='avro');
 
 INSERT INTO "collections" SELECT * FROM "collection_add";
@@ -73,7 +75,5 @@ CREATE SINK CONNECTOR "collections" WITH (
     'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
     'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
     'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
-    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.PartialValueStrategy',
-    'document.id.strategy.partial.value.projection.type' = 'AllowList',
-    'document.id.strategy.partial.value.projection.list' = 'id'
+    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy'
 );
