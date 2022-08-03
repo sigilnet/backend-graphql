@@ -28,7 +28,7 @@ const metadataSchema = new Schema(
 
 const nftSchema = new Schema({
   _id: String,
-  owner_id: String,
+  owner_id: {type: String, index: true},
   token_id: String,
   metadata: metadataSchema,
 });
@@ -37,9 +37,19 @@ export const Nft = model('Nft', nftSchema, 'nfts');
 export const NftTC = composeMongoose(Nft, {schemaComposer});
 
 NftTC.addRelation('owner', {
-  resolver: () => UserTC.mongooseResolvers.dataLoader(),
+  resolver: () => UserTC.mongooseResolvers.dataLoader({lean: true}),
   prepareArgs: {
     _id: source => source.owner_id,
   },
   projection: {owner_id: true},
+});
+
+const metadataTC = NftTC.getFieldOTC('metadata');
+
+metadataTC.addRelation('collection', {
+  resolver: () => CollectionTC.mongooseResolvers.dataLoader({lean: true}),
+  prepareArgs: {
+    _id: source => source.collection_id,
+  },
+  projection: {collection_id: true},
 });

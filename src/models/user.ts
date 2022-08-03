@@ -7,9 +7,11 @@ mongooseLong(mongoose);
 
 const userSchema = new Schema({
   _id: String,
-  id: {type: String, uniq: true},
-  name: String,
+  id: {type: String, unique: true},
+  name: {type: String, index: true},
   avatar: String,
+  created_at: Number,
+  updated_at: Number,
 });
 
 export const User = model('User', userSchema, 'users');
