@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "lib": ["es2016", "esnext.asynciterable", "es2020.string"],
+    "rootDir": ".",
+    "strict": true,
+    "typeRoots": ["./node_modules/@types", "./src/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "@server/*": ["src/*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "target": "es6"
+  },
+  "include": ["src/**/*"]
+}
