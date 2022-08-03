@@ -1,12 +1,21 @@
 SET 'auto.offset.reset' = 'earliest';
 
+CREATE TYPE USER
+  AS STRUCT<
+    "id" STRING,
+    "name" STRING,
+    "avatar" STRING,
+    "created_at" BIGINT,
+    "updated_at" BIGINT
+  >;
+
 -- create events
 CREATE STREAM "event_user_add" (
     "standard" STRING,
     "version" STRING,
     "event" STRING,
-    "data" STRUCT <"id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT>,
-    "emit_info" STRUCT <"receipt_id" STRING, "block_timestamp" BIGINT, "block_height" BIGINT, "shard_id" BIGINT, "contract_account_id" STRING>
+    "data" USER,
+    "emit_info" EMIT_INFO
 )
 WITH (
     kafka_topic = 'near-events.sigilnet.user_add',
@@ -18,8 +27,8 @@ CREATE STREAM "event_user_update" (
     "standard" STRING,
     "version" STRING,
     "event" STRING,
-    "data" STRUCT <"id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT>,
-    "emit_info" STRUCT <"receipt_id" STRING, "block_timestamp" BIGINT, "block_height" BIGINT, "shard_id" BIGINT, "contract_account_id" STRING>
+    "data" USER,
+    "emit_info" EMIT_INFO
 )
 WITH (
     kafka_topic = 'near-events.sigilnet.user_update',
@@ -100,6 +109,3 @@ SELECT * FROM "users" EMIT CHANGES;
 
 TERMINATE <QUERYID>;
 DROP STREAM <STREAM>;
-
--- TODO
-2. postgres startup -> create schema
