@@ -32,6 +32,15 @@ CREATE TYPE NFT_MINT
     "memo" STRING
   >;
 
+CREATE TYPE NFT_TRANSFER
+  AS STRUCT<
+    "new_owner_id" STRING,
+    "old_owner_id" STRING,
+    "token_ids" ARRAY<STRING>,
+    "metadata" ARRAY<TOKEN_METADATA>,
+    "memo" STRING
+  >;
+
 -- create events
 CREATE STREAM "event_nft_mint" (
     "standard" STRING,
@@ -46,13 +55,34 @@ WITH (
     partitions = 1
 );
 
--- create nfts
 CREATE STREAM "event_nft_mint_flat"
   WITH (kafka_topic='near-events.nep171.nft_mint_flat', partitions=1, value_format='avro')
   AS SELECT
     EXPLODE("data") AS "data"
   FROM
     "event_nft_mint";
+
+CREATE STREAM "event_nft_transfer" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "emit_info" EMIT_INFO,
+    "data" ARRAY <NFT_TRANSFER>
+)
+WITH (
+    kafka_topic = 'near-events.nep171.nft_transfer',
+    value_format = 'json',
+    partitions = 1
+);
+
+CREATE STREAM "event_nft_transfer_flat"
+  WITH (kafka_topic='near-events.nep171.nft_transfer_flat', partitions=1, value_format='avro')
+  AS SELECT
+    EXPLODE("data") AS "data"
+  FROM
+    "event_nft_transfer";
+
+-- create nfts
 
 CREATE STREAM "nft_mint"
   WITH (kafka_topic='sigilnet.nft_mint', partitions=1, value_format='avro')
@@ -63,10 +93,20 @@ CREATE STREAM "nft_mint"
   FROM
     "event_nft_mint_flat";
 
+CREATE STREAM "nft_transfer"
+  WITH (kafka_topic='sigilnet.nft_transfer', partitions=1, value_format='avro')
+  AS SELECT
+    "data"->"new_owner_id" AS "owner_id",
+    EXPLODE("data"->"token_ids") AS "token_id",
+    EXPLODE("data"->"metadata") AS "metadata"
+  FROM
+    "event_nft_transfer_flat";
+
 CREATE STREAM "nfts" ("owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA)
   WITH (kafka_topic='sigilnet.nfts', partitions=1, value_format='avro');
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint";
+INSERT INTO "nfts" SELECT * FROM "nft_transfer";
 
 -- create sink
 CREATE SINK CONNECTOR "nfts" WITH (
@@ -87,3 +127,4 @@ CREATE SINK CONNECTOR "nfts" WITH (
 
 -- testing
 SELECT * FROM "nfts" EMIT CHANGES;
+DESCRIBE "nfts" EXTENDED;
