@@ -50,7 +50,8 @@ WITH (
 CREATE STREAM "event_nft_mint_flat"
   WITH (kafka_topic='near-events.nep171.nft_mint_flat', partitions=1, value_format='avro')
   AS SELECT
-    EXPLODE("data") AS "data"
+    EXPLODE("data") AS "data",
+    "emit_info"
   FROM
     "event_nft_mint";
 
@@ -70,7 +71,8 @@ WITH (
 CREATE STREAM "event_nft_transfer_flat"
   WITH (kafka_topic='near-events.nep171.nft_transfer_flat', partitions=1, value_format='avro')
   AS SELECT
-    EXPLODE("data") AS "data"
+    EXPLODE("data") AS "data",
+    "emit_info"
   FROM
     "event_nft_transfer";
 
@@ -82,7 +84,8 @@ CREATE STREAM "nft_mint"
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    EXPLODE("data"->"metadata") AS "metadata"
+    EXPLODE("data"->"metadata") AS "metadata",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_nft_mint_flat";
 
@@ -93,7 +96,8 @@ CREATE STREAM "nft_mint_extra"
     "owner_id",
     "token_id",
     "metadata",
-    JSON_RECORDS("metadata"->"extra") AS "metadata_extra"
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra",
+    "contract_account_id"
   FROM
     "nft_mint";
 
@@ -103,7 +107,8 @@ CREATE STREAM "nft_transfer"
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"new_owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    EXPLODE("data"->"metadata") AS "metadata"
+    EXPLODE("data"->"metadata") AS "metadata",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_nft_transfer_flat";
 
@@ -114,11 +119,12 @@ CREATE STREAM "nft_transfer_extra"
     "owner_id",
     "token_id",
     "metadata",
-    JSON_RECORDS("metadata"->"extra") AS "metadata_extra"
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra",
+    "contract_account_id"
   FROM
     "nft_transfer";
 
-CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>)
+CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
   WITH (kafka_topic='sigilnet.nfts', partitions=1, value_format='avro');
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint_extra";
