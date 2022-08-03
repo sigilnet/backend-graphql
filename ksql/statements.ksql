@@ -1,12 +1,12 @@
 SET 'auto.offset.reset' = 'earliest';
 
 -- create events
-CREATE STREAM event_user_add (
-    standard STRING,
-    version STRING,
-    event STRING,
-    data STRUCT <id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT>,
-    emit_info STRUCT <receipt_id STRING, block_timestamp BIGINT, block_height BIGINT, shard_id BIGINT, contract_account_id STRING>
+CREATE STREAM "event_user_add" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "data" STRUCT <"id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT>,
+    "emit_info" STRUCT <"receipt_id" STRING, "block_timestamp" BIGINT, "block_height" BIGINT, "shard_id" BIGINT, "contract_account_id" STRING>
 )
 WITH (
     kafka_topic = 'near-events.sigilnet.user_add',
@@ -14,12 +14,12 @@ WITH (
     partitions = 1
 );
 
-CREATE STREAM event_user_update (
-    standard STRING,
-    version STRING,
-    event STRING,
-    data STRUCT <id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT>,
-    emit_info STRUCT <receipt_id STRING, block_timestamp BIGINT, block_height BIGINT, shard_id BIGINT, contract_account_id STRING>
+CREATE STREAM "event_user_update" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "data" STRUCT <"id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT>,
+    "emit_info" STRUCT <"receipt_id" STRING, "block_timestamp" BIGINT, "block_height" BIGINT, "shard_id" BIGINT, "contract_account_id" STRING>
 )
 WITH (
     kafka_topic = 'near-events.sigilnet.user_update',
@@ -28,43 +28,62 @@ WITH (
 );
 
 -- create users
-CREATE STREAM user_add
-  WITH (kafka_topic='sigilnet.user_add', partitions=1, value_format='json')
+CREATE STREAM "user_add"
+  WITH (kafka_topic='sigilnet.user_add', partitions=1, value_format='avro')
   AS SELECT
-    data->id as id,
-    data->name as name,
-    data->avatar as avatar,
-    data->created_at as created_at,
-    data->updated_at as updated_at
+    "data"->"id" as "id",
+    "data"->"name" as "name",
+    "data"->"avatar" as "avatar",
+    "data"->"created_at" as "created_at",
+    "data"->"updated_at" as "updated_at"
   FROM
-    event_user_add;
+    "event_user_add";
 
-CREATE STREAM user_update
-  WITH (kafka_topic='sigilnet.user_update', partitions=1, value_format='json')
+CREATE STREAM "user_update"
+  WITH (kafka_topic='sigilnet.user_update', partitions=1, value_format='avro')
   AS SELECT
-    data->id as id,
-    data->name as name,
-    data->avatar as avatar,
-    data->created_at as created_at,
-    data->updated_at as updated_at
+    "data"->"id" as "id",
+    "data"->"name" as "name",
+    "data"->"avatar" as "avatar",
+    "data"->"created_at" as "created_at",
+    "data"->"updated_at" as "updated_at"
   FROM
-    event_user_update;
+    "event_user_update";
 
-CREATE STREAM users (id STRING, name STRING, avatar STRING, created_at BIGINT, updated_at BIGINT)
-  WITH (kafka_topic='sigilnet.users', partitions=1, value_format='json');
+CREATE STREAM "users" ("id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT)
+  WITH (kafka_topic='sigilnet.users', partitions=1, value_format='avro');
 
-INSERT INTO users SELECT * FROM user_add;
-INSERT INTO users SELECT * FROM user_update;
+INSERT INTO "users" SELECT * FROM "user_add";
+INSERT INTO "users" SELECT * FROM "user_update";
 
+-- create sink
+CREATE SINK CONNECTOR "users" WITH (
+    'connector.class'                         = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+    'connection.url'                          = 'jdbc:postgresql://postgres:5432/sigilnet',
+    'connection.user'                         = 'sigilnet',
+    'connection.password'                     = 'sigilnet',
+    'topics'                                  = 'sigilnet.users',
+    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
+    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'auto.create'                             = 'true',
+    'insert.mode'                             = 'upsert',
+    'pk.mode'                                 = 'record_value',
+    'pk.fields'                               = 'id'
+);
 
 -- testing
 SHOW TOPICS;
 SHOW STREAMS;
 SHOW QUERIES;
 
-DESCRIBE users EXTENDED;
+DESCRIBE "users" EXTENDED;
 
-SELECT * FROM users EMIT CHANGES;
+SELECT * FROM "users" EMIT CHANGES;
 
 TERMINATE <QUERYID>;
 DROP STREAM <STREAM>;
+
+-- TODO
+2. postgres startup -> create schema
