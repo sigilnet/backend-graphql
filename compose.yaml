@@ -87,18 +87,20 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  postgres:
-    image: debezium/postgres:10
-    restart: always
+  mongo:
+    image: mongo:4.2.5
+    hostname: mongo
+    container_name: mongo
+    ports:
+      - '27017:27017'
     environment:
-      POSTGRES_USER: sigilnet
-      POSTGRES_PASSWORD: sigilnet
-      POSTGRES_DB: sigilnet
+      MONGO_INITDB_ROOT_USERNAME: sigilnet
+      MONGO_INITDB_ROOT_PASSWORD: sigilnet
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - mongo:/data/db
 
 volumes:
   zookeeper: ~
   zookeeper-log: ~
   kafka: ~
-  postgres: ~
+  mongo: ~
