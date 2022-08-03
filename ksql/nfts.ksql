@@ -16,13 +16,6 @@ CREATE TYPE TOKEN_METADATA
     "collection_id" STRING
   >;
 
-CREATE TYPE TOKEN
-  AS STRUCT<
-    "token_id" STRING,
-    "owner_id" STRING,
-    "metadata" TOKEN_METADATA
-  >;
-
 CREATE TYPE NFT_MINT
   AS STRUCT<
     "owner_id" STRING,
@@ -93,6 +86,17 @@ CREATE STREAM "nft_mint"
   FROM
     "event_nft_mint_flat";
 
+CREATE STREAM "nft_mint_extra"
+  WITH (kafka_topic='sigilnet.nft_mint_extra', partitions=1, value_format='avro')
+  AS SELECT
+    "_id",
+    "owner_id",
+    "token_id",
+    "metadata",
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra"
+  FROM
+    "nft_mint";
+
 CREATE STREAM "nft_transfer"
   WITH (kafka_topic='sigilnet.nft_transfer', partitions=1, value_format='avro')
   AS SELECT
@@ -103,11 +107,22 @@ CREATE STREAM "nft_transfer"
   FROM
     "event_nft_transfer_flat";
 
-CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA)
+CREATE STREAM "nft_transfer_extra"
+  WITH (kafka_topic='sigilnet.nft_transfer_extra', partitions=1, value_format='avro')
+  AS SELECT
+    "_id",
+    "owner_id",
+    "token_id",
+    "metadata",
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra"
+  FROM
+    "nft_transfer";
+
+CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>)
   WITH (kafka_topic='sigilnet.nfts', partitions=1, value_format='avro');
 
-INSERT INTO "nfts" SELECT * FROM "nft_mint";
-INSERT INTO "nfts" SELECT * FROM "nft_transfer";
+INSERT INTO "nfts" SELECT * FROM "nft_mint_extra";
+INSERT INTO "nfts" SELECT * FROM "nft_transfer_extra";
 
 -- create sink
 CREATE SINK CONNECTOR "nfts" WITH (

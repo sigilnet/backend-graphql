@@ -7,6 +7,18 @@ import {UserTC} from './user';
 
 mongooseLong(mongoose);
 
+const extraSchema = new Schema(
+  {
+    explicit: Boolean,
+    edition: Number,
+    exclusive: Boolean,
+    tag: String,
+    royalty: Number,
+    category: String,
+  },
+  {_id: false},
+);
+
 const metadataSchema = new Schema(
   {
     title: String,
@@ -18,7 +30,7 @@ const metadataSchema = new Schema(
     expires_at: Number,
     starts_at: Number,
     updated_at: Number,
-    extra: String,
+    // extra: String,
     reference: String,
     reference_hash: String,
     collection_id: String,
@@ -31,6 +43,7 @@ const nftSchema = new Schema({
   owner_id: {type: String, index: true},
   token_id: String,
   metadata: metadataSchema,
+  metadata_extra: extraSchema,
 });
 
 export const Nft = model('Nft', nftSchema, 'nfts');
