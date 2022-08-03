@@ -1,5 +1,3 @@
-SET 'auto.offset.reset' = 'earliest';
-
 -- create types
 CREATE TYPE TOKEN_METADATA
   AS STRUCT<
@@ -124,7 +122,3 @@ CREATE SINK CONNECTOR "nfts" WITH (
     'document.id.strategy.partial.value.projection.type' = 'AllowList',
     'document.id.strategy.partial.value.projection.list' = 'token_id'
 );
-
--- testing
-SELECT * FROM "nfts" EMIT CHANGES;
-DESCRIBE "nfts" EXTENDED;
