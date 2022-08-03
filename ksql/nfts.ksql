@@ -13,7 +13,7 @@ CREATE TYPE TOKEN_METADATA
     "extra" STRING,
     "reference" STRING,
     "reference_hash" STRING,
-    "collection" STRING
+    "collection_id" STRING
   >;
 
 CREATE TYPE TOKEN

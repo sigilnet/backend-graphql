@@ -18,7 +18,7 @@ const metadataSchema = new Schema({
   extra: String,
   reference: String,
   reference_hash: String,
-  collection: String,
+  collection_id: String,
 });
 
 const nftSchema = new Schema({
