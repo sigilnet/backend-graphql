@@ -1,0 +1,9 @@
+-- create common types
+CREATE TYPE EMIT_INFO
+  AS STRUCT<
+    "receipt_id" STRING,
+    "block_timestamp" BIGINT,
+    "block_height" BIGINT,
+    "shard_id" BIGINT,
+    "contract_account_id" STRING
+  >;
