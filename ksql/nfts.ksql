@@ -12,7 +12,8 @@ CREATE TYPE TOKEN_METADATA
     "updated_at" BIGINT,
     "extra" STRING,
     "reference" STRING,
-    "reference_hash" STRING
+    "reference_hash" STRING,
+    "collection" STRING
   >;
 
 CREATE TYPE TOKEN

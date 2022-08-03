@@ -5,7 +5,7 @@ import {schemaComposer} from '../schemaComposer';
 
 mongooseLong(mongoose);
 
-export const userSchema = new Schema({
+const userSchema = new Schema({
   id: {type: String, uniq: true},
   name: String,
   avatar: String,
