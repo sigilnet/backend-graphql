@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     tags:
-      - 'v*-*' # example: v1.0.0-ksql / v1.0.0
+      - 'v*' # example: v1.0.0-ksql / v1.0.0
 
 jobs:
   build_and_push_to_registry:
