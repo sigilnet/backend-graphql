@@ -1,3 +1,4 @@
+-- env variables
 DEFINE topic_input_prefix = '';
 DEFINE topic_output_prefix = '';
 DEFINE mongo_connection_uri = '';
