@@ -42,13 +42,13 @@ CREATE STREAM "event_nft_mint" (
     "data" ARRAY <NFT_MINT>
 )
 WITH (
-    kafka_topic = 'near-events.nep171.nft_mint',
+    kafka_topic = '${topic_input_prefix}.nep171.nft_mint',
     value_format = 'json',
     partitions = 1
 );
 
 CREATE STREAM "event_nft_mint_flat"
-  WITH (kafka_topic='near-events.nep171.nft_mint_flat', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_flat', partitions=1, value_format='avro')
   AS SELECT
     EXPLODE("data") AS "data",
     "emit_info"
@@ -63,13 +63,13 @@ CREATE STREAM "event_nft_transfer" (
     "data" ARRAY <NFT_TRANSFER>
 )
 WITH (
-    kafka_topic = 'near-events.nep171.nft_transfer',
+    kafka_topic = '${topic_input_prefix}.nep171.nft_transfer',
     value_format = 'json',
     partitions = 1
 );
 
 CREATE STREAM "event_nft_transfer_flat"
-  WITH (kafka_topic='near-events.nep171.nft_transfer_flat', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_flat', partitions=1, value_format='avro')
   AS SELECT
     EXPLODE("data") AS "data",
     "emit_info"
@@ -79,7 +79,7 @@ CREATE STREAM "event_nft_transfer_flat"
 -- create nfts
 
 CREATE STREAM "nft_mint"
-  WITH (kafka_topic='sigilnet.nft_mint', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint', partitions=1, value_format='avro')
   AS SELECT
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"owner_id" AS "owner_id",
@@ -90,7 +90,7 @@ CREATE STREAM "nft_mint"
     "event_nft_mint_flat";
 
 CREATE STREAM "nft_mint_extra"
-  WITH (kafka_topic='sigilnet.nft_mint_extra', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_extra', partitions=1, value_format='avro')
   AS SELECT
     "_id",
     "owner_id",
@@ -102,7 +102,7 @@ CREATE STREAM "nft_mint_extra"
     "nft_mint";
 
 CREATE STREAM "nft_transfer"
-  WITH (kafka_topic='sigilnet.nft_transfer', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer', partitions=1, value_format='avro')
   AS SELECT
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"new_owner_id" AS "owner_id",
@@ -113,7 +113,7 @@ CREATE STREAM "nft_transfer"
     "event_nft_transfer_flat";
 
 CREATE STREAM "nft_transfer_extra"
-  WITH (kafka_topic='sigilnet.nft_transfer_extra', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_extra', partitions=1, value_format='avro')
   AS SELECT
     "_id",
     "owner_id",
@@ -125,7 +125,7 @@ CREATE STREAM "nft_transfer_extra"
     "nft_transfer";
 
 CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
-  WITH (kafka_topic='sigilnet.nfts', partitions=1, value_format='avro');
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nfts', partitions=1, value_format='avro');
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint_extra";
 INSERT INTO "nfts" SELECT * FROM "nft_transfer_extra";
@@ -133,14 +133,14 @@ INSERT INTO "nfts" SELECT * FROM "nft_transfer_extra";
 -- create sink
 CREATE SINK CONNECTOR "nfts" WITH (
     'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
-    'connection.uri'                          = 'mongodb://sigilnet:sigilnet@mongo:27017',
-    'database'                                = 'sigilnet',
-    'collection'                              = 'nfts',
+    'connection.uri'                          = '${mongo_connection_uri}',
+    'database'                                = '${mongo_db}',
     'tasks.max'                               = '1',
-    'topics'                                  = 'sigilnet.nfts',
     'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'key.converter.schema.registry.url'       = '${schema_registry_url}',
     'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'value.converter.schema.registry.url'     = '${schema_registry_url}',
     'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy'
+    'collection'                              = 'nfts',
+    'topics'                                  = '${topic_output_prefix}.nep171.nfts'
 );

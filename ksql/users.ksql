@@ -17,7 +17,7 @@ CREATE STREAM "event_user_add" (
     "emit_info" EMIT_INFO
 )
 WITH (
-    kafka_topic = 'near-events.sigilnet.user_add',
+    kafka_topic = '${topic_input_prefix}.sigilnet.user_add',
     value_format = 'json',
     partitions = 1
 );
@@ -30,14 +30,14 @@ CREATE STREAM "event_user_update" (
     "emit_info" EMIT_INFO
 )
 WITH (
-    kafka_topic = 'near-events.sigilnet.user_update',
+    kafka_topic = '${topic_input_prefix}.sigilnet.user_update',
     value_format = 'json',
     partitions = 1
 );
 
 -- create users
 CREATE STREAM "user_add"
-  WITH (kafka_topic='sigilnet.user_add', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_add', partitions=1, value_format='avro')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
@@ -49,7 +49,7 @@ CREATE STREAM "user_add"
     "event_user_add";
 
 CREATE STREAM "user_update"
-  WITH (kafka_topic='sigilnet.user_update', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_update', partitions=1, value_format='avro')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
@@ -61,7 +61,7 @@ CREATE STREAM "user_update"
     "event_user_update";
 
 CREATE STREAM "users" ("_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT)
-  WITH (kafka_topic='sigilnet.users', partitions=1, value_format='avro');
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=1, value_format='avro');
 
 INSERT INTO "users" SELECT * FROM "user_add";
 INSERT INTO "users" SELECT * FROM "user_update";
@@ -69,14 +69,14 @@ INSERT INTO "users" SELECT * FROM "user_update";
 -- create sink
 CREATE SINK CONNECTOR "users" WITH (
     'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
-    'connection.uri'                          = 'mongodb://sigilnet:sigilnet@mongo:27017',
-    'database'                                = 'sigilnet',
-    'collection'                              = 'users',
+    'connection.uri'                          = '${mongo_connection_uri}',
+    'database'                                = '${mongo_db}',
     'tasks.max'                               = '1',
-    'topics'                                  = 'sigilnet.users',
     'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = 'http://schema-registry:8081',
+    'key.converter.schema.registry.url'       = '${schema_registry_url}',
     'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = 'http://schema-registry:8081',
+    'value.converter.schema.registry.url'     = '${schema_registry_url}',
     'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy'
+    'collection'                              = 'users',
+    'topics'                                  = '${topic_output_prefix}.sigilnet.users'
 );
