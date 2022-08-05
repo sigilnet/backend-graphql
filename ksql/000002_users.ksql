@@ -76,7 +76,7 @@ CREATE SINK CONNECTOR "users" WITH (
     'key.converter.schema.registry.url'       = '${schema_registry_url}',
     'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
     'value.converter.schema.registry.url'     = '${schema_registry_url}',
-    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy'
+    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
     'collection'                              = 'users',
     'topics'                                  = '${topic_output_prefix}.sigilnet.users'
 );
