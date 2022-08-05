@@ -1,0 +1,79 @@
+-- create types
+CREATE TYPE COLLECTION
+  AS STRUCT<
+    "id" STRING,
+    "name" STRING,
+    "cover" STRING,
+    "owner_id" STRING
+  >;
+
+-- create events
+CREATE STREAM "event_collection_add" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "data" COLLECTION,
+    "emit_info" EMIT_INFO
+)
+WITH (
+    kafka_topic = '${topic_input_prefix}.sigilnet.collection_add',
+    value_format = 'json',
+    partitions = 1
+);
+
+CREATE STREAM "event_collection_update" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "data" COLLECTION,
+    "emit_info" EMIT_INFO
+)
+WITH (
+    kafka_topic = '${topic_input_prefix}.sigilnet.collection_update',
+    value_format = 'json',
+    partitions = 1
+);
+
+-- create collections
+CREATE STREAM "collection_add"
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_add', partitions=1, value_format='avro')
+  AS SELECT
+    "data"->"id" AS "_id",
+    "data"->"id" AS "id",
+    "data"->"name" AS "name",
+    "data"->"cover" AS "cover",
+    "data"->"owner_id" AS "owner_id"
+  FROM
+    "event_collection_add";
+
+CREATE STREAM "collection_update"
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_update', partitions=1, value_format='avro')
+  AS SELECT
+    "data"->"id" AS "_id",
+    "data"->"id" AS "id",
+    "data"->"name" AS "name",
+    "data"->"cover" AS "cover",
+    "data"->"owner_id" AS "owner_id"
+  FROM
+    "event_collection_update";
+
+CREATE STREAM "collections" ("_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "owner_id" STRING)
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collections', partitions=1, value_format='avro');
+
+INSERT INTO "collections" SELECT * FROM "collection_add";
+INSERT INTO "collections" SELECT * FROM "collection_update";
+
+-- create sink
+CREATE SINK CONNECTOR "collections" WITH (
+    'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
+    'connection.uri'                          = '${mongo_connection_uri}',
+    'database'                                = '${mongo_db}',
+    'tasks.max'                               = '1',
+    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
+    'key.converter.schema.registry.url'       = '${schema_registry_url}',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = '${schema_registry_url}',
+    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
+    'collection'                              = 'collections',
+    'topics'                                  = '${topic_output_prefix}.sigilnet.collections'
+);

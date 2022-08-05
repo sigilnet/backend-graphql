@@ -1,0 +1,4 @@
+confluent-hub-components
+.env
+dist
+node_modules

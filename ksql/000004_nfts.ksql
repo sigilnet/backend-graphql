@@ -1,0 +1,146 @@
+-- create types
+CREATE TYPE TOKEN_METADATA
+  AS STRUCT<
+    "title" STRING,
+    "description" STRING,
+    "media" STRING,
+    "media_hash" STRING,
+    "copies" INT,
+    "issued_at" BIGINT,
+    "expires_at" BIGINT,
+    "starts_at" BIGINT,
+    "updated_at" BIGINT,
+    "extra" STRING,
+    "reference" STRING,
+    "reference_hash" STRING,
+    "collection_id" STRING
+  >;
+
+CREATE TYPE NFT_MINT
+  AS STRUCT<
+    "owner_id" STRING,
+    "token_ids" ARRAY<STRING>,
+    "metadata" ARRAY<TOKEN_METADATA>,
+    "memo" STRING
+  >;
+
+CREATE TYPE NFT_TRANSFER
+  AS STRUCT<
+    "new_owner_id" STRING,
+    "old_owner_id" STRING,
+    "token_ids" ARRAY<STRING>,
+    "metadata" ARRAY<TOKEN_METADATA>,
+    "memo" STRING
+  >;
+
+-- create events
+CREATE STREAM "event_nft_mint" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "emit_info" EMIT_INFO,
+    "data" ARRAY <NFT_MINT>
+)
+WITH (
+    kafka_topic = '${topic_input_prefix}.nep171.nft_mint',
+    value_format = 'json',
+    partitions = 1
+);
+
+CREATE STREAM "event_nft_mint_flat"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_flat', partitions=1, value_format='avro')
+  AS SELECT
+    EXPLODE("data") AS "data",
+    "emit_info"
+  FROM
+    "event_nft_mint";
+
+CREATE STREAM "event_nft_transfer" (
+    "standard" STRING,
+    "version" STRING,
+    "event" STRING,
+    "emit_info" EMIT_INFO,
+    "data" ARRAY <NFT_TRANSFER>
+)
+WITH (
+    kafka_topic = '${topic_input_prefix}.nep171.nft_transfer',
+    value_format = 'json',
+    partitions = 1
+);
+
+CREATE STREAM "event_nft_transfer_flat"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_flat', partitions=1, value_format='avro')
+  AS SELECT
+    EXPLODE("data") AS "data",
+    "emit_info"
+  FROM
+    "event_nft_transfer";
+
+-- create nfts
+
+CREATE STREAM "nft_mint"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint', partitions=1, value_format='avro')
+  AS SELECT
+    EXPLODE("data"->"token_ids") AS "_id",
+    "data"->"owner_id" AS "owner_id",
+    EXPLODE("data"->"token_ids") AS "token_id",
+    EXPLODE("data"->"metadata") AS "metadata",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
+  FROM
+    "event_nft_mint_flat";
+
+CREATE STREAM "nft_mint_extra"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_extra', partitions=1, value_format='avro')
+  AS SELECT
+    "_id",
+    "owner_id",
+    "token_id",
+    "metadata",
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra",
+    "contract_account_id"
+  FROM
+    "nft_mint";
+
+CREATE STREAM "nft_transfer"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer', partitions=1, value_format='avro')
+  AS SELECT
+    EXPLODE("data"->"token_ids") AS "_id",
+    "data"->"new_owner_id" AS "owner_id",
+    EXPLODE("data"->"token_ids") AS "token_id",
+    EXPLODE("data"->"metadata") AS "metadata",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
+  FROM
+    "event_nft_transfer_flat";
+
+CREATE STREAM "nft_transfer_extra"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_extra', partitions=1, value_format='avro')
+  AS SELECT
+    "_id",
+    "owner_id",
+    "token_id",
+    "metadata",
+    JSON_RECORDS("metadata"->"extra") AS "metadata_extra",
+    "contract_account_id"
+  FROM
+    "nft_transfer";
+
+CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nfts', partitions=1, value_format='avro');
+
+INSERT INTO "nfts" SELECT * FROM "nft_mint_extra";
+INSERT INTO "nfts" SELECT * FROM "nft_transfer_extra";
+
+-- create sink
+CREATE SINK CONNECTOR "nfts" WITH (
+    'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
+    'connection.uri'                          = '${mongo_connection_uri}',
+    'database'                                = '${mongo_db}',
+    'tasks.max'                               = '1',
+    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
+    'key.converter.schema.registry.url'       = '${schema_registry_url}',
+    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url'     = '${schema_registry_url}',
+    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
+    'collection'                              = 'nfts',
+    'topics'                                  = '${topic_output_prefix}.nep171.nfts'
+);
