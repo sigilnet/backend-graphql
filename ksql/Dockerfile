@@ -6,8 +6,9 @@ USER root
 RUN yum -y install findutils
 
 COPY *.ksql ./src/
-
 COPY build-ksql.sh ./build-ksql.sh
-RUN sh ./build-ksql.sh src .
-RUN rm -rf ./src
-RUN rm ./build-ksql.sh
+COPY start.sh ./start.sh
+
+RUN chmod +x  *.sh
+
+CMD ["/app/start.sh"]
