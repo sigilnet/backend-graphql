@@ -107,18 +107,3 @@ CREATE STREAM "nfts" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metad
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint_extra";
 INSERT INTO "nfts" SELECT * FROM "nft_transfer_extra";
-
--- create sink
-CREATE SINK CONNECTOR "nfts" WITH (
-    'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
-    'connection.uri'                          = '${mongo_connection_uri}',
-    'database'                                = '${mongo_db}',
-    'tasks.max'                               = '1',
-    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = '${schema_registry_url}',
-    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = '${schema_registry_url}',
-    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
-    'collection'                              = 'nfts',
-    'topics'                                  = '${topic_output_prefix}.nep171.nfts'
-);

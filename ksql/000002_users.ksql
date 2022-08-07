@@ -65,18 +65,3 @@ CREATE STREAM "users" ("_id" STRING, "id" STRING, "name" STRING, "avatar" STRING
 
 INSERT INTO "users" SELECT * FROM "user_add";
 INSERT INTO "users" SELECT * FROM "user_update";
-
--- create sink
-CREATE SINK CONNECTOR "users" WITH (
-    'connector.class'                         = 'com.mongodb.kafka.connect.MongoSinkConnector',
-    'connection.uri'                          = '${mongo_connection_uri}',
-    'database'                                = '${mongo_db}',
-    'tasks.max'                               = '1',
-    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = '${schema_registry_url}',
-    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = '${schema_registry_url}',
-    'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
-    'collection'                              = 'users',
-    'topics'                                  = '${topic_output_prefix}.sigilnet.users'
-);
