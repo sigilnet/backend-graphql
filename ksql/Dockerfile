@@ -3,12 +3,19 @@ FROM confluentinc/ksqldb-server:0.27.2
 WORKDIR /app
 
 USER root
-RUN yum -y install findutils
+RUN yum -y install findutils unzip
 
 COPY *.ksql ./src/
 COPY build-ksql.sh ./build-ksql.sh
 COPY start.sh ./start.sh
 
 RUN chmod +x  *.sh
+
+RUN wget https://github.com/mongodb/mongo-kafka/releases/download/r1.7.0/mongodb-kafka-connect-mongodb-1.7.0.zip
+
+RUN unzip mongodb-kafka-connect-mongodb-1.7.0.zip
+RUN rm -f mongodb-kafka-connect-mongodb-1.7.0.zip
+RUN mkdir plugins
+RUN mv mongodb-kafka-connect-mongodb-1.7.0 plugins/mongodb-kafka-connect-mongodb
 
 CMD ["/app/start.sh"]
