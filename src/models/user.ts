@@ -10,6 +10,7 @@ const userSchema = new Schema({
   id: {type: String, unique: true},
   name: {type: String, index: true},
   avatar: String,
+  contract_account_id: {type: String, index: true},
   created_at: Number,
   updated_at: Number,
 });

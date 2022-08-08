@@ -12,6 +12,7 @@ const collectionSchema = new Schema({
   name: String,
   cover: String,
   owner_id: {type: String, index: true},
+  contract_account_id: {type: String, index: true},
 });
 
 export const Collection = model('Collection', collectionSchema, 'collections');

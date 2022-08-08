@@ -44,6 +44,7 @@ const nftSchema = new Schema({
   token_id: String,
   metadata: metadataSchema,
   metadata_extra: extraSchema,
+  contract_account_id: String,
 });
 
 export const Nft = model('Nft', nftSchema, 'nfts');
