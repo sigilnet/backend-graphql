@@ -45,7 +45,8 @@ CREATE STREAM "user_add"
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
-    "emit_info"->"contract_account_id" AS "contract_account_id"
+    AS_VALUE("emit_info"->"contract_account_id") AS "contract_account_id",
+    "emit_info"->"contract_account_id" AS "partition_key"
   FROM
     "event_user_add"
   PARTITION BY "emit_info"->"contract_account_id";
@@ -59,12 +60,13 @@ CREATE STREAM "user_update"
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
-    "emit_info"->"contract_account_id" AS "contract_account_id"
+    AS_VALUE("emit_info"->"contract_account_id") AS "contract_account_id",
+    "emit_info"->"contract_account_id" AS "partition_key"
   FROM
     "event_user_update"
   PARTITION BY "emit_info"->"contract_account_id";
 
-CREATE STREAM "users" ("contract_account_id" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT)
+CREATE STREAM "users" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT, "contract_account_id" STRING)
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "users" SELECT * FROM "user_add";
