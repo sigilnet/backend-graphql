@@ -19,7 +19,7 @@ CREATE STREAM "event_user_add" (
 WITH (
     kafka_topic = '${topic_input_prefix}.sigilnet.user_add',
     value_format = 'json',
-    partitions = 1
+    partitions = ${topic_input_partitions}
 );
 
 CREATE STREAM "event_user_update" (
@@ -32,36 +32,40 @@ CREATE STREAM "event_user_update" (
 WITH (
     kafka_topic = '${topic_input_prefix}.sigilnet.user_update',
     value_format = 'json',
-    partitions = 1
+    partitions = ${topic_input_partitions}
 );
 
 -- create users
 CREATE STREAM "user_add"
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_add', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_add', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
-    "data"->"updated_at" AS "updated_at"
+    "data"->"updated_at" AS "updated_at",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
-    "event_user_add";
+    "event_user_add"
+  PARTITION BY "emit_info"->"contract_account_id";
 
 CREATE STREAM "user_update"
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_update', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_update', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
-    "data"->"updated_at" AS "updated_at"
+    "data"->"updated_at" AS "updated_at",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
-    "event_user_update";
+    "event_user_update"
+  PARTITION BY "emit_info"->"contract_account_id";
 
-CREATE STREAM "users" ("_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT)
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=1, value_format='avro');
+CREATE STREAM "users" ("contract_account_id" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT)
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "users" SELECT * FROM "user_add";
 INSERT INTO "users" SELECT * FROM "user_update";

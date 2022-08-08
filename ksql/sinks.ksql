@@ -4,10 +4,6 @@ CREATE SINK CONNECTOR "users" WITH (
     'connection.uri'                          = '${mongo_connection_uri}',
     'database'                                = '${mongo_db}',
     'tasks.max'                               = '1',
-    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = '${schema_registry_url}',
-    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = '${schema_registry_url}',
     'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
     'collection'                              = 'users',
     'topics'                                  = '${topic_output_prefix}.sigilnet.users'
@@ -18,10 +14,6 @@ CREATE SINK CONNECTOR "collections" WITH (
     'connection.uri'                          = '${mongo_connection_uri}',
     'database'                                = '${mongo_db}',
     'tasks.max'                               = '1',
-    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = '${schema_registry_url}',
-    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = '${schema_registry_url}',
     'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
     'collection'                              = 'collections',
     'topics'                                  = '${topic_output_prefix}.sigilnet.collections'
@@ -32,10 +24,6 @@ CREATE SINK CONNECTOR "nfts" WITH (
     'connection.uri'                          = '${mongo_connection_uri}',
     'database'                                = '${mongo_db}',
     'tasks.max'                               = '1',
-    'key.converter'                           = 'org.apache.kafka.connect.storage.StringConverter',
-    'key.converter.schema.registry.url'       = '${schema_registry_url}',
-    'value.converter'                         = 'io.confluent.connect.avro.AvroConverter',
-    'value.converter.schema.registry.url'     = '${schema_registry_url}',
     'document.id.strategy' = 'com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInValueStrategy',
     'collection'                              = 'nfts',
     'topics'                                  = '${topic_output_prefix}.nep171.nfts'

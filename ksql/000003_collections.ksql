@@ -18,7 +18,7 @@ CREATE STREAM "event_collection_add" (
 WITH (
     kafka_topic = '${topic_input_prefix}.sigilnet.collection_add',
     value_format = 'json',
-    partitions = 1
+    partitions = ${topic_input_partitions}
 );
 
 CREATE STREAM "event_collection_update" (
@@ -31,34 +31,38 @@ CREATE STREAM "event_collection_update" (
 WITH (
     kafka_topic = '${topic_input_prefix}.sigilnet.collection_update',
     value_format = 'json',
-    partitions = 1
+    partitions = ${topic_input_partitions}
 );
 
 -- create collections
 CREATE STREAM "collection_add"
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_add', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_add', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"cover" AS "cover",
-    "data"->"owner_id" AS "owner_id"
+    "data"->"owner_id" AS "owner_id",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
-    "event_collection_add";
+    "event_collection_add"
+  PARTITION BY "emit_info"->"contract_account_id";
 
 CREATE STREAM "collection_update"
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_update', partitions=1, value_format='avro')
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collection_update', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
     "data"->"id" AS "_id",
     "data"->"id" AS "id",
     "data"->"name" AS "name",
     "data"->"cover" AS "cover",
-    "data"->"owner_id" AS "owner_id"
+    "data"->"owner_id" AS "owner_id",
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
-    "event_collection_update";
+    "event_collection_update"
+  PARTITION BY "emit_info"->"contract_account_id";
 
-CREATE STREAM "collections" ("_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "owner_id" STRING)
-  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collections', partitions=1, value_format='avro');
+CREATE STREAM "collections" ("contract_account_id" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "owner_id" STRING)
+  WITH (kafka_topic='${topic_output_prefix}.sigilnet.collections', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "collections" SELECT * FROM "collection_add";
 INSERT INTO "collections" SELECT * FROM "collection_update";
