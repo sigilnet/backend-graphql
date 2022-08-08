@@ -39,32 +39,32 @@ WITH (
 CREATE STREAM "user_add"
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_add', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-    "data"->"id" AS "_id",
-    "data"->"id" AS "id",
+    "emit_info"->"contract_account_id" + ':' + "data"->"id" AS "_id",
+    AS_VALUE("data"->"id") AS "id",
+    "data"->"id" AS "partition_key",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
-    AS_VALUE("emit_info"->"contract_account_id") AS "contract_account_id",
-    "emit_info"->"contract_account_id" AS "partition_key"
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_user_add"
-  PARTITION BY "emit_info"->"contract_account_id";
+  PARTITION BY "data"->"id";
 
 CREATE STREAM "user_update"
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.user_update', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-    "data"->"id" AS "_id",
-    "data"->"id" AS "id",
+    "emit_info"->"contract_account_id" + ':' + "data"->"id" AS "_id",
+    AS_VALUE("data"->"id") AS "id",
+    "data"->"id" AS "partition_key",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
-    AS_VALUE("emit_info"->"contract_account_id") AS "contract_account_id",
-    "emit_info"->"contract_account_id" AS "partition_key"
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_user_update"
-  PARTITION BY "emit_info"->"contract_account_id";
+  PARTITION BY "data"->"id";
 
 CREATE STREAM "users" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT, "contract_account_id" STRING)
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=${topic_output_partitions}, value_format='avro');
