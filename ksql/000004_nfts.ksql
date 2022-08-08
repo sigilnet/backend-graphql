@@ -82,17 +82,24 @@ CREATE STREAM "nft_mint"
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    "emit_info"->"contract_account_id" AS "contract_account_id",
-    "emit_info"->"contract_account_id" AS "partiton_key"
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_nft_mint_flat";
+
+CREATE STREAM "nft_mint_partition_key"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_partition_key', partitions=${topic_input_partitions}, value_format='json')
+  AS SELECT
+  *,
+  "contract_account_id" + ':' + "token_id" as "partiton_key"
+  FROM
+    "nft_mint";
 
 CREATE STREAM "nft_mint_partitions"
   WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_partitions', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
   *
   FROM
-    "nft_mint"
+    "nft_mint_partition_key"
   PARTITION BY "partiton_key";
 
 CREATE STREAM "nft_mint_partitions_extra" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING, "partiton_key" STRING KEY)
@@ -104,17 +111,24 @@ CREATE STREAM "nft_transfer"
     EXPLODE("data"->"token_ids") AS "_id",
     "data"->"new_owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    "emit_info"->"contract_account_id" AS "contract_account_id",
-    "emit_info"->"contract_account_id" AS "partiton_key"
+    "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_nft_transfer_flat";
+
+CREATE STREAM "nft_transfer_partition_key"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_partition_key', partitions=${topic_input_partitions}, value_format='json')
+  AS SELECT
+  *,
+  "contract_account_id" + ':' + "token_id" as "partiton_key"
+  FROM
+    "nft_transfer";
 
 CREATE STREAM "nft_transfer_partitions"
   WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_partitions', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
   *
   FROM
-    "nft_transfer"
+    "nft_transfer_partition_key"
   PARTITION BY "partiton_key";
 
 CREATE STREAM "nft_transfer_partitions_extra" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING, "partiton_key" STRING KEY)
