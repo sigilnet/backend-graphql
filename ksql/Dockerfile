@@ -1,4 +1,4 @@
-FROM confluentinc/cp-ksqldb-server:6.1.7
+FROM confluentinc/ksqldb-server:0.27.2
 
 WORKDIR /app
 

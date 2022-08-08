@@ -2,4 +2,4 @@
 
 sh ./build-ksql.sh src .
 
-exec /etc/confluent/docker/run "$@"
+exec /usr/bin/docker/run "$@"
