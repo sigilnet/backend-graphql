@@ -4,6 +4,8 @@ import {composeMongoose} from 'graphql-compose-mongoose';
 import {schemaComposer} from '../schemaComposer';
 import {UserTC} from './user';
 
+const SIGILNET_CONTRACT_ID = process.env.SIGILNET_CONTRACT_ID || '';
+
 mongooseLong(mongoose);
 
 const collectionSchema = new Schema({
@@ -21,7 +23,7 @@ export const CollectionTC = composeMongoose(Collection, {schemaComposer});
 CollectionTC.addRelation('owner', {
   resolver: () => UserTC.mongooseResolvers.dataLoader({lean: true}),
   prepareArgs: {
-    _id: source => source.owner_id,
+    _id: source => `${SIGILNET_CONTRACT_ID}:${source.owner_id}`,
   },
   projection: {owner_id: true},
 });

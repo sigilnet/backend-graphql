@@ -5,6 +5,8 @@ import {schemaComposer} from '../schemaComposer';
 import {CollectionTC} from '@server/models/collection';
 import {UserTC} from './user';
 
+const SIGILNET_CONTRACT_ID = process.env.SIGILNET_CONTRACT_ID || '';
+
 mongooseLong(mongoose);
 
 const extraSchema = new Schema(
@@ -53,7 +55,7 @@ export const NftTC = composeMongoose(Nft, {schemaComposer});
 NftTC.addRelation('owner', {
   resolver: () => UserTC.mongooseResolvers.dataLoader({lean: true}),
   prepareArgs: {
-    _id: source => source.owner_id,
+    _id: source => `${SIGILNET_CONTRACT_ID}:${source.owner_id}`,
   },
   projection: {owner_id: true},
 });
@@ -63,7 +65,7 @@ const metadataTC = NftTC.getFieldOTC('metadata');
 metadataTC.addRelation('collection', {
   resolver: () => CollectionTC.mongooseResolvers.dataLoader({lean: true}),
   prepareArgs: {
-    _id: source => source.collection_id,
+    _id: source => `nft.${SIGILNET_CONTRACT_ID}:${source.collection_id}`,
   },
   projection: {collection_id: true},
 });
