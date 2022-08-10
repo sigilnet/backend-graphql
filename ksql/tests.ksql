@@ -31,7 +31,22 @@ SELECT * FROM "nfts" EMIT CHANGES;
 TERMINATE <QUERYID>;
 DROP STREAM <STREAM>;
 
--- drop nfts
+-- drop nfts v0
+drop stream "nfts";
+drop stream "nft_transfer_partitions_extra";
+drop stream "nft_transfer_partitions";
+drop stream "nft_transfer_partition_key";
+drop stream "nft_transfer";
+drop stream "event_nft_transfer_flat";
+drop stream "event_nft_transfer";
+drop stream "nft_mint_partitions_extra";
+drop stream "nft_mint_partitions";
+drop stream "nft_mint_partition_key";
+drop stream "nft_mint";
+drop stream "event_nft_mint_flat";
+drop stream "event_nft_mint";
+
+-- drop nfts v1
 drop stream "nfts";
 drop stream "nft_mint";
 drop stream "nft_mint_flat";
@@ -39,3 +54,17 @@ drop stream "event_nft_mint_metadata";
 drop stream "nft_transfer";
 drop stream "nft_transfer_flat";
 drop stream "event_nft_transfer_metadata";
+
+-- drop users
+drop stream "users";
+drop stream "user_add";
+drop stream "user_update";
+drop stream "event_user_add";
+drop stream "event_user_update";
+
+-- drop collections
+drop stream "collections";
+drop stream "collection_add";
+drop stream "collection_update";
+drop stream "event_collection_add";
+drop stream "event_collection_update";
