@@ -30,3 +30,12 @@ SELECT * FROM "nfts" EMIT CHANGES;
 
 TERMINATE <QUERYID>;
 DROP STREAM <STREAM>;
+
+-- drop nfts
+drop stream "nfts";
+drop stream "nft_mint";
+drop stream "nft_mint_flat";
+drop stream "event_nft_mint_metadata";
+drop stream "nft_transfer";
+drop stream "nft_transfer_flat";
+drop stream "event_nft_transfer_metadata";

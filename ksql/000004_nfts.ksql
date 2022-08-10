@@ -16,126 +16,105 @@ CREATE TYPE TOKEN_METADATA
     "collection_id" STRING
   >;
 
-CREATE TYPE NFT_MINT
+CREATE TYPE NFT_MINT_WITH_METADATA
   AS STRUCT<
     "owner_id" STRING,
     "token_ids" ARRAY<STRING>,
-    "memo" STRING
+    "memo" STRING,
+    "metadatas" ARRAY<TOKEN_METADATA>,
+    "metadata_extras" ARRAY<MAP<STRING, STRING>>,
+    "_ids" ARRAY<STRING>
   >;
 
-CREATE TYPE NFT_TRANSFER
+CREATE TYPE NFT_TRANSFER_WITH_METADATA
   AS STRUCT<
     "new_owner_id" STRING,
     "old_owner_id" STRING,
     "token_ids" ARRAY<STRING>,
-    "memo" STRING
+    "memo" STRING,
+    "metadatas" ARRAY<TOKEN_METADATA>,
+    "metadata_extras" ARRAY<MAP<STRING, STRING>>,
+    "_ids" ARRAY<STRING>
   >;
 
 -- create events
-CREATE STREAM "event_nft_mint" (
+CREATE STREAM "event_nft_mint_metadata" (
     "standard" STRING,
     "version" STRING,
     "event" STRING,
     "emit_info" EMIT_INFO,
-    "data" ARRAY <NFT_MINT>
+    "data" NFT_MINT_WITH_METADATA,
+    "partition_key" STRING KEY
 )
 WITH (
-    kafka_topic = '${topic_input_prefix}.nep171.nft_mint',
+    kafka_topic = '${topic_input_prefix}.nep171.nft_mint_metadata',
     value_format = 'json',
     partitions = ${topic_input_partitions}
 );
 
-CREATE STREAM "event_nft_mint_flat"
-  WITH (kafka_topic='${topic_input_prefix}.nep171.nft_mint_flat', partitions=${topic_input_partitions}, value_format='json')
-  AS SELECT
-    EXPLODE("data") AS "data",
-    "emit_info"
-  FROM
-    "event_nft_mint";
-
-CREATE STREAM "event_nft_transfer" (
+CREATE STREAM "event_nft_transfer_metadata" (
     "standard" STRING,
     "version" STRING,
     "event" STRING,
     "emit_info" EMIT_INFO,
-    "data" ARRAY <NFT_TRANSFER>
+    "data" NFT_TRANSFER_WITH_METADATA,
+    "partition_key" STRING KEY
 )
 WITH (
-    kafka_topic = '${topic_input_prefix}.nep171.nft_transfer',
+    kafka_topic = '${topic_input_prefix}.nep171.nft_transfer_metadata',
     value_format = 'json',
     partitions = ${topic_input_partitions}
 );
-
-CREATE STREAM "event_nft_transfer_flat"
-  WITH (kafka_topic='${topic_input_prefix}.nep171.nft_transfer_flat', partitions=${topic_input_partitions}, value_format='json')
-  AS SELECT
-    EXPLODE("data") AS "data",
-    "emit_info"
-  FROM
-    "event_nft_transfer";
 
 -- create nfts
-
-CREATE STREAM "nft_mint"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint', partitions=${topic_input_partitions}, value_format='json')
+CREATE STREAM "nft_mint_flat"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_flat', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-    EXPLODE("data"->"token_ids") AS "_id",
+    EXPLODE("data"->"_ids") AS "_id",
+    EXPLODE("data"->"_ids") AS "partition_key",
     "data"->"owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    "emit_info"->"contract_account_id" AS "contract_account_id"
+    EXPLODE("data"->"metadatas") AS "metadata",
+    EXPLODE("data"->"metadata_extras") AS "metadata_extra",
+    "emit_info"->"contract_account_id" AS "contract_account_id",
+    "partition_key" as "old_partition_key"
   FROM
-    "event_nft_mint_flat";
+    "event_nft_mint_metadata"
+  PARTITION BY "partition_key";
 
-CREATE STREAM "nft_mint_partition_key"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_partition_key', partitions=${topic_input_partitions}, value_format='json')
+CREATE STREAM "nft_mint"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-  *,
-  "contract_account_id" + ':' + "token_id" as "partiton_key"
+  "_id", "owner_id", "token_id", "metadata", "metadata_extra", "contract_account_id", "partition_key"
   FROM
-    "nft_mint";
+    "nft_mint_flat"
+  PARTITION BY "partition_key";
 
-CREATE STREAM "nft_mint_partitions"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_partitions', partitions=${topic_output_partitions}, value_format='json')
+CREATE STREAM "nft_transfer_flat"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_flat', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-  *
-  FROM
-    "nft_mint_partition_key"
-  PARTITION BY "partiton_key";
-
-CREATE STREAM "nft_mint_partitions_extra" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING, "partiton_key" STRING KEY)
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint_partitions_extra', partitions=${topic_output_partitions}, value_format='json');
-
-CREATE STREAM "nft_transfer"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer', partitions=${topic_input_partitions}, value_format='json')
-  AS SELECT
-    EXPLODE("data"->"token_ids") AS "_id",
+    EXPLODE("data"->"_ids") AS "_id",
+    EXPLODE("data"->"_ids") AS "partition_key",
     "data"->"new_owner_id" AS "owner_id",
     EXPLODE("data"->"token_ids") AS "token_id",
-    "emit_info"->"contract_account_id" AS "contract_account_id"
+    EXPLODE("data"->"metadatas") AS "metadata",
+    EXPLODE("data"->"metadata_extras") AS "metadata_extra",
+    "emit_info"->"contract_account_id" AS "contract_account_id",
+    "partition_key" as "old_partition_key"
   FROM
-    "event_nft_transfer_flat";
+    "event_nft_transfer_metadata"
+  PARTITION BY "partition_key";
 
-CREATE STREAM "nft_transfer_partition_key"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_partition_key', partitions=${topic_input_partitions}, value_format='json')
+CREATE STREAM "nft_transfer"
+  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-  *,
-  "contract_account_id" + ':' + "token_id" as "partiton_key"
+  "_id", "owner_id", "token_id", "metadata", "metadata_extra", "contract_account_id", "partition_key"
   FROM
-    "nft_transfer";
+    "nft_transfer_flat"
+  PARTITION BY "partition_key";
 
-CREATE STREAM "nft_transfer_partitions"
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_partitions', partitions=${topic_output_partitions}, value_format='json')
-  AS SELECT
-  *
-  FROM
-    "nft_transfer_partition_key"
-  PARTITION BY "partiton_key";
-
-CREATE STREAM "nft_transfer_partitions_extra" ("_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING, "partiton_key" STRING KEY)
-  WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer_partitions_extra', partitions=${topic_output_partitions}, value_format='json');
-
-CREATE STREAM "nfts" ("partiton_key" STRING KEY, "_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
+CREATE STREAM "nfts" ("partition_key" STRING KEY, "_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
   WITH (kafka_topic='${topic_output_prefix}.nep171.nfts', partitions=${topic_output_partitions}, value_format='avro');
 
-INSERT INTO "nfts" SELECT * FROM "nft_mint_partitions_extra";
-INSERT INTO "nfts" SELECT * FROM "nft_transfer_partitions_extra";
+INSERT INTO "nfts" SELECT * FROM "nft_mint";
+INSERT INTO "nfts" SELECT * FROM "nft_transfer";
