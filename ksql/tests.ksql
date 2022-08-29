@@ -56,6 +56,7 @@ drop stream "nft_transfer_flat";
 drop stream "event_nft_transfer_metadata";
 
 -- drop users
+drop type user;
 drop stream "users";
 drop stream "user_add";
 drop stream "user_update";
@@ -63,6 +64,7 @@ drop stream "event_user_add";
 drop stream "event_user_update";
 
 -- drop collections
+drop type collection;
 drop stream "collections";
 drop stream "collection_add";
 drop stream "collection_update";

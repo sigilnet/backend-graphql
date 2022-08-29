@@ -13,6 +13,7 @@ const collectionSchema = new Schema({
   id: {type: String, unique: true},
   name: String,
   cover: String,
+  description: String,
   owner_id: {type: String, index: true},
   contract_account_id: {type: String, index: true},
 });

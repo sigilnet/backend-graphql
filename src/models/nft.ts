@@ -47,6 +47,8 @@ const nftSchema = new Schema({
   metadata: metadataSchema,
   metadata_extra: extraSchema,
   contract_account_id: String,
+  issued_at: {type: String, index: true},
+  block_timestamp: {type: String, index: true},
 });
 
 export const Nft = model('Nft', nftSchema, 'nfts');

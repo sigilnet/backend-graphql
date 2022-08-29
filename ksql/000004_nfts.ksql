@@ -77,6 +77,7 @@ CREATE STREAM "nft_mint_flat"
     EXPLODE("data"->"metadatas") AS "metadata",
     EXPLODE("data"->"metadata_extras") AS "metadata_extra",
     "emit_info"->"contract_account_id" AS "contract_account_id",
+    CAST("emit_info"->"block_timestamp" as STRING) AS "block_timestamp",
     "partition_key" as "old_partition_key"
   FROM
     "event_nft_mint_metadata"
@@ -85,7 +86,15 @@ CREATE STREAM "nft_mint_flat"
 CREATE STREAM "nft_mint"
   WITH (kafka_topic='${topic_output_prefix}.nep171.nft_mint', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-  "_id", "owner_id", "token_id", "metadata", "metadata_extra", "contract_account_id", "partition_key"
+  "_id",
+  "owner_id",
+  "token_id",
+  "metadata",
+  "metadata_extra",
+  "contract_account_id",
+  "partition_key",
+  "metadata"->"issued_at" AS "issued_at",
+  "block_timestamp"
   FROM
     "nft_mint_flat"
   PARTITION BY "partition_key";
@@ -100,6 +109,7 @@ CREATE STREAM "nft_transfer_flat"
     EXPLODE("data"->"metadatas") AS "metadata",
     EXPLODE("data"->"metadata_extras") AS "metadata_extra",
     "emit_info"->"contract_account_id" AS "contract_account_id",
+    CAST("emit_info"->"block_timestamp" as STRING) AS "block_timestamp",
     "partition_key" as "old_partition_key"
   FROM
     "event_nft_transfer_metadata"
@@ -108,12 +118,20 @@ CREATE STREAM "nft_transfer_flat"
 CREATE STREAM "nft_transfer"
   WITH (kafka_topic='${topic_output_prefix}.nep171.nft_transfer', partitions=${topic_output_partitions}, value_format='json')
   AS SELECT
-  "_id", "owner_id", "token_id", "metadata", "metadata_extra", "contract_account_id", "partition_key"
+  "_id",
+  "owner_id",
+  "token_id",
+  "metadata",
+  "metadata_extra",
+  "contract_account_id",
+  "partition_key",
+  "metadata"->"issued_at" AS "issued_at",
+  "block_timestamp"
   FROM
     "nft_transfer_flat"
   PARTITION BY "partition_key";
 
-CREATE STREAM "nfts" ("partition_key" STRING KEY, "_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING)
+CREATE STREAM "nfts" ("partition_key" STRING KEY, "_id" STRING, "owner_id" STRING, "token_id" STRING, "metadata" TOKEN_METADATA, "metadata_extra" MAP<STRING,STRING>, "contract_account_id" STRING, "issued_at" STRING, "block_timestamp" STRING)
   WITH (kafka_topic='${topic_output_prefix}.nep171.nfts', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "nfts" SELECT * FROM "nft_mint";

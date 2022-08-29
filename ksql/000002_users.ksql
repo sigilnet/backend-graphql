@@ -4,6 +4,7 @@ CREATE TYPE USER
     "id" STRING,
     "name" STRING,
     "avatar" STRING,
+    "brief" STRING,
     "created_at" BIGINT,
     "updated_at" BIGINT
   >;
@@ -44,6 +45,7 @@ CREATE STREAM "user_add"
     "data"->"id" AS "partition_key",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
+    "data"->"brief" AS "brief",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
     "emit_info"->"contract_account_id" AS "contract_account_id"
@@ -59,6 +61,7 @@ CREATE STREAM "user_update"
     "data"->"id" AS "partition_key",
     "data"->"name" AS "name",
     "data"->"avatar" AS "avatar",
+    "data"->"brief" AS "brief",
     "data"->"created_at" AS "created_at",
     "data"->"updated_at" AS "updated_at",
     "emit_info"->"contract_account_id" AS "contract_account_id"
@@ -66,7 +69,7 @@ CREATE STREAM "user_update"
     "event_user_update"
   PARTITION BY "data"->"id";
 
-CREATE STREAM "users" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "created_at" BIGINT, "updated_at" BIGINT, "contract_account_id" STRING)
+CREATE STREAM "users" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "avatar" STRING, "brief" STRING, "created_at" BIGINT, "updated_at" BIGINT, "contract_account_id" STRING)
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.users', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "users" SELECT * FROM "user_add";
