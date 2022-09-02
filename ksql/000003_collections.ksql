@@ -46,6 +46,7 @@ CREATE STREAM "collection_add"
     "data"->"cover" AS "cover",
     "data"->"description" AS "description",
     "data"->"owner_id" AS "owner_id",
+    CAST("emit_info"->"block_timestamp" as STRING) AS "block_timestamp",
     "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_collection_add"
@@ -61,12 +62,13 @@ CREATE STREAM "collection_update"
     "data"->"cover" AS "cover",
     "data"->"description" AS "description",
     "data"->"owner_id" AS "owner_id",
+    CAST("emit_info"->"block_timestamp" as STRING) AS "block_timestamp",
     "emit_info"->"contract_account_id" AS "contract_account_id"
   FROM
     "event_collection_update"
   PARTITION BY "data"->"id";
 
-CREATE STREAM "collections" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "description" STRING, "owner_id" STRING, "contract_account_id" STRING)
+CREATE STREAM "collections" ("partition_key" STRING KEY, "_id" STRING, "id" STRING, "name" STRING, "cover" STRING, "description" STRING, "owner_id" STRING, "block_timestamp" STRING, "contract_account_id" STRING)
   WITH (kafka_topic='${topic_output_prefix}.sigilnet.collections', partitions=${topic_output_partitions}, value_format='avro');
 
 INSERT INTO "collections" SELECT * FROM "collection_add";

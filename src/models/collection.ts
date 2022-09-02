@@ -16,6 +16,7 @@ const collectionSchema = new Schema({
   description: String,
   owner_id: {type: String, index: true},
   contract_account_id: {type: String, index: true},
+  block_timestamp: {type: String, index: true},
 });
 
 export const Collection = model('Collection', collectionSchema, 'collections');

@@ -46,7 +46,7 @@ const nftSchema = new Schema({
   token_id: String,
   metadata: metadataSchema,
   metadata_extra: extraSchema,
-  contract_account_id: String,
+  contract_account_id: {type: String, index: true},
   issued_at: {type: String, index: true},
   block_timestamp: {type: String, index: true},
 });

@@ -12,8 +12,8 @@ const userSchema = new Schema({
   avatar: String,
   brief: String,
   contract_account_id: {type: String, index: true},
-  created_at: Number,
-  updated_at: Number,
+  created_at: {type: Number, index: true},
+  updated_at: {type: Number, index: true},
 });
 
 export const User = model('User', userSchema, 'users');
