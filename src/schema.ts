@@ -1,6 +1,6 @@
 import {schemaComposer} from './schemaComposer';
 import {UserTC} from './models/user';
-import {NftTC} from './models/nft';
+import {NftTC, nftsFindMany} from './models/nft';
 import {CollectionTC} from './models/collection';
 
 schemaComposer.Query.addFields({
@@ -16,7 +16,7 @@ schemaComposer.Query.addFields({
   nftById: NftTC.mongooseResolvers.findById(),
   nftByIds: NftTC.mongooseResolvers.findByIds(),
   nft: NftTC.mongooseResolvers.findOne(),
-  nfts: NftTC.mongooseResolvers.findMany(),
+  nfts: nftsFindMany,
   nftCount: NftTC.mongooseResolvers.count(),
   nftConnection: NftTC.mongooseResolvers.connection(),
   nftPagination: NftTC.mongooseResolvers.pagination(),

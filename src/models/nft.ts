@@ -62,6 +62,15 @@ NftTC.addRelation('owner', {
   projection: {owner_id: true},
 });
 
+export const nftsFindMany = NftTC.mongooseResolvers.findMany().addFilterArg({
+  name: 'ids_in',
+  type: '[String!]',
+  description: 'Array of nftId',
+  query: (rawQuery, value) => {
+    rawQuery._id = {$in: value};
+  },
+});
+
 const metadataTC = NftTC.getFieldOTC('metadata');
 
 metadataTC.addRelation('collection', {
